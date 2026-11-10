@@ -79,4 +79,98 @@ Estos resultados confirman que el direccionamiento IPv4 y el enrutamiento básic
 
 - `evidence/screenshots/03-connectivity-tests.png`: captura de la prueba de conectividad entre las dos redes.
 
+---
+
+## Fase 4 — Reconocimiento de red
+
+### Objetivo
+
+Identificar los dispositivos de la red mediante tablas ARP y analizar la tabla de enrutamiento del router R1 para comprender cómo se comunican los equipos entre diferentes segmentos.
+
+### 1. Reconocimiento ARP desde PC-A
+
+Se utilizó el comando `arp -a` para consultar las asociaciones entre direcciones IPv4 y direcciones MAC.
+
+| Dirección IPv4 | Dirección MAC | Tipo |
+|---|---|---|
+| 192.168.10.1 | 0001.6339.7101 | dynamic |
+
+La entrada corresponde a la interfaz GigabitEthernet0/0 del router R1, que funciona como gateway de PC-A.
+
+### 2. Reconocimiento ARP desde PC-B
+
+Se ejecutó `arp -a` en PC-B y se obtuvo el siguiente resultado:
+
+| Dirección IPv4 | Dirección MAC | Tipo |
+|---|---|---|
+| 192.168.20.1 | 0001.6339.7102 | dynamic |
+
+La entrada corresponde a la interfaz GigabitEthernet0/1 del router R1, que funciona como gateway de PC-B.
+
+### 3. Tabla ARP del router R1
+
+Se utilizó el comando `show ip arp` para identificar las direcciones IP y MAC conocidas por el router.
+
+| Dispositivo | Dirección IPv4 | Dirección MAC | Interfaz |
+|---|---|---|---|
+| R1 | 192.168.10.1 | 0001.6339.7101 | GigabitEthernet0/0 |
+| PC-A | 192.168.10.10 | 0030.A3A6.CAE9 | GigabitEthernet0/0 |
+| R1 | 192.168.20.1 | 0001.6339.7102 | GigabitEthernet0/1 |
+| PC-B | 192.168.20.10 | 00D0.5866.DAA7 | GigabitEthernet0/1 |
+
+Se comprobó que R1 aprendió dinámicamente las direcciones MAC de ambos equipos después de generar tráfico hacia ellos.
+
+### 4. Análisis de la tabla de enrutamiento
+
+Se utilizó el comando `show ip route` para identificar las redes conocidas por R1.
+
+Se encontraron las siguientes rutas:
+
+| Código | Red o dirección | Interfaz |
+|---|---|---|
+| C | 192.168.10.0/24 | GigabitEthernet0/0 |
+| L | 192.168.10.1/32 | GigabitEthernet0/0 |
+| C | 192.168.20.0/24 | GigabitEthernet0/1 |
+| L | 192.168.20.1/32 | GigabitEthernet0/1 |
+
+- **C (Connected):** red directamente conectada al router.
+- **L (Local):** dirección IP asignada a una interfaz del propio router.
+- **Gateway of last resort is not set:** no existe una ruta predeterminada configurada.
+
+R1 conoce ambas redes directamente conectadas y puede encaminar tráfico entre ellas.
+
+### 5. Pruebas de conectividad desde R1
+
+Se ejecutaron pruebas ICMP desde el router hacia ambos equipos.
+
+| Prueba | Destino | Paquetes recibidos | Pérdida |
+|---|---|---|---|
+| R1 → PC-A | 192.168.10.10 | 4/5 | 20 % |
+| R1 → PC-B | 192.168.20.10 | 4/5 | 20 % |
+
+En ambas pruebas, el primer paquete no recibió respuesta y los cuatro siguientes fueron exitosos. Este comportamiento puede producirse durante la resolución ARP inicial.
+
+### 6. Prueba de conectividad entre redes
+
+Desde PC-B se ejecutó `ping 192.168.10.10`.
+
+Resultado: 4 paquetes enviados, 4 recibidos y 0 % de pérdida.
+
+También se comprobó que PC-B conserva en su tabla ARP únicamente la dirección MAC de su gateway, ya que PC-A pertenece a otra subred.
+
+### Conclusión
+
+Se identificaron las direcciones IPv4 y MAC de los dos equipos y las interfaces del router asociadas a cada segmento.
+
+El análisis de las tablas ARP permitió comprender cómo se resuelven las direcciones MAC dentro de una red local. La tabla de enrutamiento confirmó que R1 conoce las dos redes directamente conectadas y puede encaminar tráfico entre ellas.
+
+Estos procedimientos constituyen una base del reconocimiento de infraestructura de red utilizado durante las primeras etapas de una auditoría de seguridad o pentesting.
+
+### Evidencias
+
+- `evidence/screenshots/04-pc-a-arp.png`
+- `evidence/screenshots/05-pc-b-arp.png`
+- `evidence/screenshots/06-router-arp.png`
+- `evidence/screenshots/07-router-routing-table.png`
+
 
